@@ -37,7 +37,7 @@ class FaceDetectorPainter extends CustomPainter {
         paint,
       );
         TextSpan span = TextSpan(
-            style: TextStyle(
+            style: const TextStyle(
                 color: Colors.red, fontSize: 15, fontWeight: FontWeight.bold),
             text: label);
         TextPainter textPainter = TextPainter(
@@ -61,20 +61,20 @@ class FaceDetectorPainter extends CustomPainter {
   }
 }
 
-RRect _scaleRect(
-    {required Rect rect,
-    required Size imageSize,
-    required Size widgetSize,
-    double? scaleX,
-    double? scaleY}) {
-  return RRect.fromLTRBR(
-    (widgetSize.width - rect.left.toDouble() * scaleX!),
-    rect.top.toDouble() * scaleY!,
-    widgetSize.width - rect.right.toDouble() * scaleX,
-    rect.bottom.toDouble() * scaleY,
-    Radius.circular(0),
-  );
-}
+// RRect _scaleRect(
+//     {required Rect rect,
+//     required Size imageSize,
+//     required Size widgetSize,
+//     double? scaleX,
+//     double? scaleY}) {
+//   return RRect.fromLTRBR(
+//     (widgetSize.width - rect.left.toDouble() * scaleX!),
+//     rect.top.toDouble() * scaleY!,
+//     widgetSize.width - rect.right.toDouble() * scaleX,
+//     rect.bottom.toDouble() * scaleY,
+//     Radius.circular(0),
+//   );
+// }
 
 
 

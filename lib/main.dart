@@ -67,7 +67,7 @@ class _MyHomePageState extends State<_MyHomePage> {
     //TODO initialize face detector
     faceDetector = FaceDetector(options: options);
 
-    initialCamera();
+    cameraFunction();
   }
 
   Future loadModel() async {
@@ -94,10 +94,16 @@ class _MyHomePageState extends State<_MyHomePage> {
   //       return InputImageRotation.rotation270deg;
   //   }
   // }
+  //   static InputImageRotation _getInputImageRotation(int sensorOrientation) {
+  //   if (sensorOrientation == 0) return InputImageRotation.rotation0deg;
+  //   if (sensorOrientation == 90) return InputImageRotation.rotation90deg;
+  //   if (sensorOrientation == 180) return InputImageRotation.rotation180deg;
+  //   return InputImageRotation.rotation270deg;
+  // }
 
-  ////////////////initialcamera method////////////////////
+  ////////////////camera method////////////////////
 
-  Future<void> initialCamera() async {
+  Future<void> cameraFunction() async {
     loadModel();
     _camera =
         CameraController(description, ResolutionPreset.low, enableAudio: false);
@@ -121,8 +127,8 @@ class _MyHomePageState extends State<_MyHomePage> {
 
   doFaceDetectionOnFrame() async {
     tempDir = await getApplicationDocumentsDirectory();
-    String _embPath = tempDir!.path + '/emb.json';
-    jsonFile = File(_embPath);
+    String embPath = '${tempDir!.path}/emb.json';
+    jsonFile = File(embPath);
     if (jsonFile!.existsSync()) {
       data = json.decode(jsonFile!.readAsStringSync());
     }
@@ -131,18 +137,19 @@ class _MyHomePageState extends State<_MyHomePage> {
     dynamic finalResult = Multimap<String, Face>();
     var frameImg = getInputImage();
     List<Face> faces = await faceDetector.processImage(frameImg);
-    if (faces.length == 0)
+    if (faces.isEmpty) {
       _faceFound = false;
-    else
+    } else {
       _faceFound = true;
-    Face _face;
+    }
+    Face face;
     imglib.Image convertedImage = _convertCameraImage(img!, _direction);
-    for (_face in faces) {
+    for (face in faces) {
       double x, y, w, h;
-      x = (_face.boundingBox.left - 10);
-      y = (_face.boundingBox.top - 10);
-      w = (_face.boundingBox.width + 10);
-      h = (_face.boundingBox.height + 10);
+      x = (face.boundingBox.left - 10);
+      y = (face.boundingBox.top - 10);
+      w = (face.boundingBox.width + 10);
+      h = (face.boundingBox.height + 10);
       imglib.Image croppedImage = imglib.copyCrop(
         convertedImage,
         x.round(),
@@ -153,7 +160,7 @@ class _MyHomePageState extends State<_MyHomePage> {
       croppedImage = imglib.copyResizeCropSquare(croppedImage, 112);
       res_name = _recog(croppedImage);
 
-      finalResult.add(res_name, _face);
+      finalResult.add(res_name, face);
     }
     setState(() {
       _scanResults = finalResult;
@@ -206,7 +213,7 @@ class _MyHomePageState extends State<_MyHomePage> {
   ///////////////////////////////////////////////////////////////////////////////
 
   Widget _buildResults() {
-    const Text noResultsText = const Text('');
+    const Text noResultsText = Text('');
     if (_scanResults == null ||
         _camera == null ||
         !_camera!.value.isInitialized) {
@@ -244,6 +251,7 @@ class _MyHomePageState extends State<_MyHomePage> {
             ),
     );
   }
+//////////////////////Function for changing camera direction//////////////////////////////////////
 
   void _toggleCameraDirection() async {
     if (_direction == CameraLensDirection.back) {
@@ -260,7 +268,7 @@ class _MyHomePageState extends State<_MyHomePage> {
       _camera;
     });
 
-    initialCamera();
+    cameraFunction();
   }
 
   @override
@@ -274,19 +282,20 @@ class _MyHomePageState extends State<_MyHomePage> {
         actions: <Widget>[
           PopupMenuButton<Choice>(
             onSelected: (Choice result) {
-              if (result == Choice.delete)
+              if (result == Choice.delete) {
                 _resetFile();
-              else
+              } else {
                 _viewLabels();
+              }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<Choice>>[
               const PopupMenuItem<Choice>(
-                child: Text('View Saved Faces'),
                 value: Choice.view,
+                child: Text('View Saved Faces'),
               ),
               const PopupMenuItem<Choice>(
-                child: Text('Remove all faces'),
                 value: Choice.delete,
+                child: Text('Remove all faces'),
               )
             ],
           ),
@@ -297,11 +306,11 @@ class _MyHomePageState extends State<_MyHomePage> {
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         FloatingActionButton(
           backgroundColor: (_faceFound) ? Colors.blue : Colors.blueGrey,
-          child: Icon(Icons.add),
           onPressed: () {
             if (_faceFound) _addLabel();
           },
           heroTag: null,
+          child: Icon(Icons.add),
         ),
         SizedBox(
           width: 10,
@@ -414,7 +423,7 @@ class _MyHomePageState extends State<_MyHomePage> {
         TextButton(
           child: Text("OK"),
           onPressed: () {
-            initialCamera();
+            cameraFunction();
             Navigator.pop(context);
           },
         )
@@ -461,7 +470,7 @@ class _MyHomePageState extends State<_MyHomePage> {
         TextButton(
           child: Text("Cancel"),
           onPressed: () {
-            initialCamera();
+            cameraFunction();
             Navigator.pop(context);
           },
         )
@@ -479,6 +488,6 @@ class _MyHomePageState extends State<_MyHomePage> {
     jsonFile!.writeAsStringSync(
       json.encode(data),
     );
-    initialCamera();
+    cameraFunction();
   }
 }
