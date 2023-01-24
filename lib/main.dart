@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-//import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
