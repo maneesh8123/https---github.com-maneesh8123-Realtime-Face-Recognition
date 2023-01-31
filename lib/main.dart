@@ -1,9 +1,11 @@
+
 import 'package:flutter/services.dart';
+import 'package:mlfacerecognition/imagecovertion.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import 'detector_painters.dart';
-import 'utils.dart';
+
 
 import 'dart:convert';
 import 'dart:io';
@@ -57,7 +59,10 @@ class _MyHomePageState extends State<_MyHomePage> {
   @override
   void initState() {
     super.initState();
-
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     final options = FaceDetectorOptions(
         enableClassification: false,
         enableContours: false,
@@ -70,38 +75,38 @@ class _MyHomePageState extends State<_MyHomePage> {
     cameraFunction();
   }
 
-  Future loadModel() async {
-    try {
-      var interpreterOptions = InterpreterOptions();
-
-      interpreter = await Interpreter.fromAsset('mobilefacenet.tflite',
-          options: interpreterOptions);
-    } on Exception {
-      print('Failed to load model.');
-    }
-  }
-////////////////////////////////////////////////////////////////////////////////////////////////
-
   // Future loadModel() async {
   //   try {
-  //     final gpuDelegateV2 = GpuDelegateV2(
-  //       options: GpuDelegateOptionsV2(
-  //         isPrecisionLossAllowed: false,
-  //         inferencePreference: TfLiteGpuInferenceUsage.fastSingleAnswer,
-  //         inferencePriority1: TfLiteGpuInferencePriority.minLatency,
-  //         inferencePriority2: TfLiteGpuInferencePriority.auto,
-  //         inferencePriority3: TfLiteGpuInferencePriority.auto,
-  //       ),
-  //     );
+  //     var interpreterOptions = InterpreterOptions();
 
-  //     var interpreterOptions = InterpreterOptions()
-  //       ..addDelegate(gpuDelegateV2);
-  //     interpreter = await tfl.Interpreter.fromAsset('mobilefacenet.tflite',
+  //     interpreter = await Interpreter.fromAsset('mobilefacenet.tflite',
   //         options: interpreterOptions);
   //   } on Exception {
   //     print('Failed to load model.');
   //   }
   // }
+////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  Future loadModel() async {
+    try {
+      final gpuDelegateV2 = GpuDelegateV2(
+        options: GpuDelegateOptionsV2(
+          isPrecisionLossAllowed: false,
+          inferencePreference: TfLiteGpuInferenceUsage.fastSingleAnswer,
+          inferencePriority1: TfLiteGpuInferencePriority.minLatency,
+          inferencePriority2: TfLiteGpuInferencePriority.auto,
+          inferencePriority3: TfLiteGpuInferencePriority.auto,
+        ),
+      );
+
+      var interpreterOptions = InterpreterOptions()
+        ..addDelegate(gpuDelegateV2);
+      interpreter = await tfl.Interpreter.fromAsset('mobilefacenet.tflite',
+          options: interpreterOptions);
+    } on Exception {
+      print('Failed to load model.');
+    }
+  }
 ////////////////////// Image Rotation //////////////////////////////////////////////////////////
 
   // InputImageRotation rotationIntToImageRotation(int rotation) {
@@ -117,19 +122,19 @@ class _MyHomePageState extends State<_MyHomePage> {
   //       return InputImageRotation.rotation270deg;
   //   }
   // }
-  //   static InputImageRotation _getInputImageRotation(int sensorOrientation) {
-  //   if (sensorOrientation == 0) return InputImageRotation.rotation0deg;
-  //   if (sensorOrientation == 90) return InputImageRotation.rotation90deg;
-  //   if (sensorOrientation == 180) return InputImageRotation.rotation180deg;
-  //   return InputImageRotation.rotation270deg;
-  // }
+    static InputImageRotation _getInputImageRotation(int sensorOrientation) {
+    if (sensorOrientation == 0) return InputImageRotation.rotation0deg;
+    if (sensorOrientation == 90) return InputImageRotation.rotation90deg;
+    if (sensorOrientation == 180) return InputImageRotation.rotation180deg;
+    return InputImageRotation.rotation270deg;
+  }
 
   ////////////////camera method/////////////////////////////////////////////
 
   Future<void> cameraFunction() async {
     loadModel();
-    _camera = CameraController(description, ResolutionPreset.low,
-        enableAudio: false);
+    _camera =
+        CameraController(description, ResolutionPreset.low, enableAudio: false);
     await _camera!.initialize().then((_) {
       if (!mounted) {
         return;
@@ -140,14 +145,14 @@ class _MyHomePageState extends State<_MyHomePage> {
     });
   }
 
-  @override
-  void dispose() {
-    _camera!.dispose();
-    faceDetector.close();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _camera!.dispose();
+  //   faceDetector.close();
+  //   super.dispose();
+  // }
   ////////////////Face Detection Method///////////////////////////////////////////
-  imglib.Image? image;
+
   doFaceDetectionOnFrame() async {
     tempDir = await getApplicationDocumentsDirectory();
     String embPath = '${tempDir!.path}/emb.json';
@@ -166,20 +171,21 @@ class _MyHomePageState extends State<_MyHomePage> {
       _faceFound = true;
     }
     Face face;
-    image = convertYUV420ToImage(img!);
-    image = imglib.copyRotate(
-        image!, _direction == CameraLensDirection.front ? 270 : 90);
-
-    for (Face face in faces) {
-      Rect faceRect = face.boundingBox;
-      //TODO crop face
-      image = imglib.copyCrop(
-          image!,
-          faceRect.left.toInt(),
-          faceRect.top.toInt(),
-          faceRect.width.toInt(),
-          faceRect.height.toInt());
-      imglib.Image croppedImage = imglib.copyResizeCropSquare(image!, 112);
+    imglib.Image convertedImage = _convertCameraImage(img!, _direction);
+    for (face in faces) {
+      double x, y, w, h;
+      x = (face.boundingBox.left - 10);
+      y = (face.boundingBox.top - 10);
+      w = (face.boundingBox.width + 10);
+      h = (face.boundingBox.height + 10);
+      imglib.Image croppedImage = imglib.copyCrop(
+        convertedImage,
+        x.round(),
+        y.round(),
+        w.round(),
+        h.round(),
+      );
+      croppedImage = imglib.copyResizeCropSquare(croppedImage, 112);
       res_name = _recog(croppedImage);
 
       finalResult.add(res_name, face);
@@ -188,75 +194,6 @@ class _MyHomePageState extends State<_MyHomePage> {
       _scanResults = finalResult;
       isBusy = false;
     });
-  }
-
-  imglib.Image convertYUV420ToImage(CameraImage cameraImage) {
-    final width = cameraImage.width;
-    final height = cameraImage.height;
-
-    final yRowStride = cameraImage.planes[0].bytesPerRow;
-    final uvRowStride = cameraImage.planes[1].bytesPerRow;
-    final uvPixelStride = cameraImage.planes[1].bytesPerPixel!;
-
-    final image = imglib.Image(width, height);
-
-    for (var w = 0; w < width; w++) {
-      for (var h = 0; h < height; h++) {
-        final uvIndex =
-            uvPixelStride * (w / 2).floor() + uvRowStride * (h / 2).floor();
-        final index = h * width + w;
-        final yIndex = h * yRowStride + w;
-
-        final y = cameraImage.planes[0].bytes[yIndex];
-        final u = cameraImage.planes[1].bytes[uvIndex];
-        final v = cameraImage.planes[2].bytes[uvIndex];
-
-        image.data[index] = yuv2rgb(y, u, v);
-      }
-    }
-    return image;
-  }
-
-  // img.Image _convertYUV420(CameraImage image) {
-  //   var imag = img.Image(image.width, image.height); // Create Image buffer
-
-  //   Plane plane = image.planes[0];
-  //   const int shift = (0xFF << 24);
-
-  //   // Fill image buffer with plane[0] from YUV420_888
-  //   for (int x = 0; x < image.width; x++) {
-  //     for (int planeOffset = 0;
-  //         planeOffset < image.height * image.width;
-  //         planeOffset += image.width) {
-  //       final pixelColor = plane.bytes[planeOffset + x];
-  //       // color: 0x FF  FF  FF  FF
-  //       //           A   B   G   R
-  //       // Calculate pixel color
-  //       var newVal =
-  //           shift | (pixelColor << 16) | (pixelColor << 8) | pixelColor;
-
-  //       imag.data[planeOffset + x] = newVal;
-  //     }
-  //   }
-
-  //   return imag;
-  // }
-
-  int yuv2rgb(int y, int u, int v) {
-    // Convert yuv pixel to rgb
-    var r = (y + v * 1436 / 1024 - 179).round();
-    var g = (y - u * 46549 / 131072 + 44 - v * 93604 / 131072 + 91).round();
-    var b = (y + u * 1814 / 1024 - 227).round();
-
-    // Clipping RGB values to be inside boundaries [ 0 , 255 ]
-    r = r.clamp(0, 255);
-    g = g.clamp(0, 255);
-    b = b.clamp(0, 255);
-
-    return 0xff000000 |
-        ((b << 16) & 0xff0000) |
-        ((g << 8) & 0xff00) |
-        (r & 0xff);
   }
 
   ////////////////Face Detection Input//////////////////////////////////////////////////
@@ -272,10 +209,10 @@ class _MyHomePageState extends State<_MyHomePage> {
       img!.height.toDouble(),
     );
     final camera = description;
-    final imageRotation =
-        InputImageRotationValue.fromRawValue(camera.sensorOrientation);
-    //  final imageRotation =
-    //     _getInputImageRotation(camera.sensorOrientation);
+    // final imageRotation =
+    //     InputImageRotationValue.fromRawValue(camera.sensorOrientation);
+     final imageRotation =
+        _getInputImageRotation(camera.sensorOrientation);
 
     final inputImageFormat =
         InputImageFormatValue.fromRawValue(img!.format.raw);
@@ -415,6 +352,40 @@ class _MyHomePageState extends State<_MyHomePage> {
         ),
       ]),
     );
+  }
+
+  imglib.Image _convertCameraImage(
+      CameraImage image, CameraLensDirection _dir) {
+    int width = image.width;
+    int height = image.height;
+    // imglib -> Image package from https://pub.dartlang.org/packages/image
+    var img = imglib.Image(width, height); // Create Image buffer
+    const int hexFF = 0xFF000000;
+    final int uvyButtonStride = image.planes[1].bytesPerRow;
+    final int? uvPixelStride = image.planes[1].bytesPerPixel;
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        final int uvIndex = uvPixelStride! * (x / 2).floor() +
+            uvyButtonStride * (y / 2).floor();
+        final int index = y * width + x;
+        final yp = image.planes[0].bytes[index];
+        final up = image.planes[1].bytes[uvIndex];
+        final vp = image.planes[2].bytes[uvIndex];
+        // Calculate pixel color
+        int r = (yp + vp * 1436 / 1024 - 179).round().clamp(0, 255);
+        int g = (yp - up * 46549 / 131072 + 44 - vp * 93604 / 131072 + 91)
+            .round()
+            .clamp(0, 255);
+        int b = (yp + up * 1814 / 1024 - 227).round().clamp(0, 255);
+        // color: 0x FF  FF  FF  FF
+        //           A   B   G   R
+        img.data[index] = hexFF | (b << 16) | (g << 8) | r;
+      }
+    }
+    var img1 = (_dir == CameraLensDirection.front)
+        ? imglib.copyRotate(img, -90)
+        : imglib.copyRotate(img, 90);
+    return img1;
   }
 
   String _recog(imglib.Image img) {
