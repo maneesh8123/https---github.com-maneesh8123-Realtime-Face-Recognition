@@ -9,8 +9,8 @@ This is a mobile app for recognize faces from CAMERA.
 ### camera
 ### google_mlkit_face_detection: ^0.5.0
 ### tflite_flutter
-### tflite_flutter_helper
 ### path provider
+### image
 
 # MODEL USED
 
