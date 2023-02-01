@@ -2,7 +2,7 @@
 
 A new Flutter project.
 
-This is a mobile app for recognize faces from CAMERA.
+This is a mobile app for recognizing faces from CAMERA.
 
 # PACKAGES USED
 
