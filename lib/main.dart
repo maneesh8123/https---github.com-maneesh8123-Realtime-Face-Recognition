@@ -45,7 +45,7 @@ class _MyHomePageState extends State<_MyHomePage> {
   CameraController? camera;
   dynamic data = {};
   double threshold = 1.0;
-  dynamic scanResults;
+  dynamic scanresults;
   CameraLensDirection direction = CameraLensDirection.front;
   late CameraDescription description = cameras[1];
   Directory? tempDir;
@@ -176,7 +176,7 @@ class _MyHomePageState extends State<_MyHomePage> {
       finalResult.add(resName, face);
     }
     setState(() {
-      scanResults = finalResult;
+      scanresults = finalResult;
       isBusy = false;
     });
   }
@@ -229,9 +229,8 @@ class _MyHomePageState extends State<_MyHomePage> {
   ///////////////////////////////////////////////////////////////////////////////////////
 
   Widget _buildResults() {
-    const Text noResultsText = Text('');
-    if (scanResults == null || camera == null || !camera!.value.isInitialized) {
-      return noResultsText;
+    if (scanresults == null || camera == null || !camera!.value.isInitialized) {
+      return const Text("");
     }
     CustomPainter painter;
 
@@ -239,14 +238,14 @@ class _MyHomePageState extends State<_MyHomePage> {
       camera!.value.previewSize!.height,
       camera!.value.previewSize!.width,
     );
-    painter = FaceDetectorPainter(imageSize, scanResults, direction);
+    painter = FaceDetectorPainter(imageSize, scanresults, direction);
     return CustomPaint(
       painter: painter,
     );
   }
 
   Widget _buildImage() {
-    if (camera == null || !camera!.value.isInitialized) {
+    if (scanresults==null || camera == null || !camera!.value.isInitialized) {
       return Center(
         child: CircularProgressIndicator(),
       );
